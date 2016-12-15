@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using LYF.FileServer.Web.Services;
+using LYF.FileServer.Web.Model;
 
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,31 +17,25 @@ namespace LYF.FileServer.Web.Controllers
     public class FileApiController : Controller
     {
         IHostingEnvironment _environment;
+        IFileService _fileService;
 
-        public FileApiController(IHostingEnvironment environment)
+        public FileApiController(IHostingEnvironment environment,IFileService fileService)
         {
             _environment = environment;
+            _fileService = fileService;
         }
 
-        /// <summary>
-        /// 下载某个文件
-        /// </summary>
-        /// <param name="id">文件id</param>
-        /// <returns></returns>
         [HttpGet]
-        public FileResult Get(string id)
+        public IActionResult Get(string filename)
         {
             var uploads = Path.Combine(_environment.WebRootPath, "uploads");
-            string filepath = System.IO.Path.Combine(uploads,"test.zip");
+            FileEntity entity = _fileService.GetFile(filename);
+            if (null == entity) return BadRequest();
+            string filepath = System.IO.Path.Combine(uploads, entity.file_path, "test.zip");
             byte[] fileBytes = System.IO.File.ReadAllBytes(filepath);
-            return File(fileBytes, "application/x-msdownload");
+            return File(fileBytes, entity.file_mimetype);
         }
-        /// <summary>
-        /// 上传文件
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="body"></param>
-        /// <returns></returns>
+
         public IActionResult Post(string id)
         {
             var files = HttpContext.Request.Form.Files;

@@ -1,4 +1,4 @@
-﻿{
+{
   "dependencies": {
     "Microsoft.NETCore.App": {
       "version": "1.0.1",
@@ -21,7 +21,9 @@
     "Microsoft.Extensions.Logging.Debug": "1.0.0",
     "Microsoft.Extensions.Options.ConfigurationExtensions": "1.0.0",
     "Microsoft.VisualStudio.Web.BrowserLink.Loader": "14.0.0",
-    "Microsoft.AspNetCore.Server.WebListener": "1.0.0"
+    "Microsoft.AspNetCore.Server.WebListener": "1.0.0",
+    "Dapper": "1.50.2",
+    "Npgsql": "3.1.8"
   },
 
   "tools": {
