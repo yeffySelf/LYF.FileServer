@@ -9,7 +9,7 @@ namespace LYF.FileServer.Web
     {
         Upload = 0,
         Download = 1,
-        Remove = 2
+        Remove = 2 
     }
     public enum DBType
     {
