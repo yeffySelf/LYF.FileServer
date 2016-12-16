@@ -16,8 +16,9 @@ namespace LYF.FileServer.Web.DBAccess
         private ILogger<DapperAccess> _log;
         private bool disposed = false;
 
-        public DapperAccess(string sqlConnectStr, DBType dbType, ILogger<DapperAccess> log)
+        public DapperAccess()
         {
+            /*
             _log = log;
             switch (dbType)
             {
@@ -30,7 +31,8 @@ namespace LYF.FileServer.Web.DBAccess
                 default:
                     break;
             }
-
+            **/
+            _conn = null;
         }
 
         public int ExcuteSQL(string sql, object param)

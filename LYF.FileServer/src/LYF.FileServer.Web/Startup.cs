@@ -31,8 +31,6 @@ namespace LYF.FileServer.Web
         {
             // Add framework services.
             services.AddMvc();
-            services.AddScoped<IFileService, FileService>();
-            services.AddTransient<DapperAccess>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,7 +38,6 @@ namespace LYF.FileServer.Web
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

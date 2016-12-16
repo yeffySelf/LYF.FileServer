@@ -8,50 +8,41 @@ using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using LYF.FileServer.Web.Services;
 using LYF.FileServer.Web.Model;
+using System.Net.Http;
+using Microsoft.AspNetCore.Http;
 
-// For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace LYF.FileServer.Web.Controllers
 {
     [Route("api/[controller]")]
-    public class FileApiController : Controller
+    public class FilesController : Controller
     {
-        IHostingEnvironment _environment;
-        IFileService _fileService;
-
-        public FileApiController(IHostingEnvironment environment,IFileService fileService)
+        [HttpGet("{filename}")]
+        public ActionResult Get(string filename)
         {
-            _environment = environment;
-            _fileService = fileService;
+            FileEntity fileEntity = GetFileInfo(filename);
+            if (fileEntity == null)
+                return NotFound();
+            FileStream fileStream = System.IO.File.Open(System.IO.Path.Combine(@"C:\", fileEntity.file_path, filename), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            FileStreamResult result = new FileStreamResult(fileStream,fileEntity.file_mimetype);
+            Response.ContentLength = fileEntity.file_length;
+            return result;
         }
 
-        [HttpGet]
-        public IActionResult Get(string filename)
+        public FileEntity GetFileInfo(string filename)
         {
-            var uploads = Path.Combine(_environment.WebRootPath, "uploads");
-            FileEntity entity = _fileService.GetFile(filename);
-            if (null == entity) return BadRequest();
-            string filepath = System.IO.Path.Combine(uploads, entity.file_path, "test.zip");
-            byte[] fileBytes = System.IO.File.ReadAllBytes(filepath);
-            return File(fileBytes, entity.file_mimetype);
-        }
-
-        public IActionResult Post(string id)
-        {
-            var files = HttpContext.Request.Form.Files;
-            var uploads = Path.Combine(_environment.WebRootPath, "uploads");
-            foreach (var file in files)
+            string fileFullPath = System.IO.Path.Combine(@"C:\", "uploads", filename);
+            FileInfo fi = new FileInfo(fileFullPath);
+            return new FileEntity()
             {
-                if (file.Length > 0)
-                {
-                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
-                    Stream fileStream = file.OpenReadStream();
-                    byte[] bytes = new byte[fileStream.Length];
-                    fileStream.Read(bytes, 0, (int)fileStream.Length);
-                    System.IO.File.WriteAllBytes(System.IO.Path.Combine(uploads,"test.zip"), bytes);
-                }
-            }
-            return Ok();
+                file_name = filename,
+                file_id = Guid.NewGuid().ToString("N"),
+                file_ext = fi.Extension,
+                file_mimetype = "application/octet-stream",
+                file_path = "uploads",
+                file_length = fi.Length,
+                file_md5 = fi.MD5()
+            };
         }
     }
 }

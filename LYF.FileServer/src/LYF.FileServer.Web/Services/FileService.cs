@@ -1,7 +1,9 @@
 ﻿using LYF.FileServer.Web.DBAccess;
 using LYF.FileServer.Web.Model;
+using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,9 +19,11 @@ namespace LYF.FileServer.Web.Services
     public class FileService : IFileService
     {
         DapperAccess _dal;
+        IHostingEnvironment _environment;
 
-        public FileService(DapperAccess dal)
+        public FileService(DapperAccess dal, IHostingEnvironment environment)
         {
+            _environment = environment;
             _dal = dal;
         }
 
