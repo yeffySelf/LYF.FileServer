@@ -14,8 +14,8 @@ using Microsoft.Extensions.Primitives;
 
 namespace LYF.FileServer.Web.Controllers
 {
-    [Route("api/[controller]")]
-    public class FilesController : Controller
+    [Route("api/files")]
+    public class FileApiController : Controller
     {
         [HttpGet("{filename}")]
         public ActionResult Get(string filename)
@@ -24,29 +24,35 @@ namespace LYF.FileServer.Web.Controllers
             string fileFullPath = System.IO.Path.Combine(@"C:\", fileEntity.file_path, filename);
             if (fileEntity == null)
                 return NotFound();
-            FileStream fileStream = System.IO.File.Open(fileFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            long startByteIndex = 0;
-            long endByteIndex = fileEntity.file_length-1;
-            var reqTypedHeader = Request.GetTypedHeaders();
-            if (reqTypedHeader.Range!=null && reqTypedHeader.Range.Ranges.Count>0)
-            {
-                //断点续传处理，多range情景没有处理
-                startByteIndex = reqTypedHeader.Range.Ranges.First().From ?? 0;
-                endByteIndex = reqTypedHeader.Range.Ranges.First().To ?? fileEntity.file_length - 1;
-                Response.StatusCode = StatusCodes.Status206PartialContent;
-                var contentRange = new ContentRangeHeaderValue(startByteIndex, endByteIndex);
-                Response.Headers[HeaderNames.ContentRange] = contentRange.ToString();
-            }
             Response.ContentType = fileEntity.file_mimetype;
             var contentDisposition = new ContentDispositionHeaderValue("attachment");
             contentDisposition.SetHttpFileName(fileEntity.file_name);
             Response.Headers[HeaderNames.ContentDisposition] = contentDisposition.ToString();
-            Response.ContentLength = fileStream.Length;
+            Response.ContentLength = fileEntity.file_length;
             Response.Headers[HeaderNames.AcceptRanges] = "bytes";
-            return new FileStreamResult(fileStream,fileEntity.file_mimetype);
+            var reqRangeHeader = Request.Headers[HeaderNames.Range].FirstOrDefault();
+            FileStream fileStream = System.IO.File.Open(fileFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            long s = fileStream.Length;
+            if (reqRangeHeader != null)
+            {
+                string strStartIndex = reqRangeHeader.Split('-')[0];
+                string strEndIndex = reqRangeHeader.Split('-')[1];
+                //断点续传处理，多range情景没有处理
+                long startByteIndex = string.IsNullOrWhiteSpace(strStartIndex) ? 0 : long.Parse(strStartIndex);
+                long endByteIndex = string.IsNullOrWhiteSpace(strEndIndex) ? fileEntity.file_length-1 : long.Parse(strEndIndex);
+                Response.StatusCode = StatusCodes.Status206PartialContent;
+                var contentRange = new ContentRangeHeaderValue(startByteIndex, endByteIndex);
+                Response.Headers[HeaderNames.ContentRange] = contentRange.ToString();
+                return new FileStreamResult(new PartialContentFileStream(fileStream, startByteIndex, endByteIndex), fileEntity.file_mimetype);
+            }
+            else
+            {
+                Response.StatusCode = StatusCodes.Status200OK;
+                return new FileStreamResult(fileStream, fileEntity.file_mimetype);
+            }
         }
 
-        public FileEntity GetFileInfo(string filename)
+        private FileEntity GetFileInfo(string filename)
         {
             string fileFullPath = System.IO.Path.Combine(@"C:\", "uploads", filename);
             FileInfo fi = new FileInfo(fileFullPath);
